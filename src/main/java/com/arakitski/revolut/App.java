@@ -17,10 +17,11 @@ public class App {
             .required(false)
             .desc("Application api port")
             .longOpt("port")
+            .hasArg(true)
             .build());
     private static final CommandLineParser COMMAND_LINE_PARSER = new DefaultParser();
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         // configure guice
         Injector injector = Guice.createInjector(new AppModule(getApplicationPort(args)));
         // configure logger
@@ -30,11 +31,11 @@ public class App {
     }
 
     @Nullable
-    private static Integer getApplicationPort(String[] args) throws ParseException {
-        CommandLine commandLine = COMMAND_LINE_PARSER.parse(OPTIONS, args);
+    private static Integer getApplicationPort(String[] args) {
         try {
+            CommandLine commandLine = COMMAND_LINE_PARSER.parse(OPTIONS, args);
             return Integer.parseInt(commandLine.getOptionValue("p"));
-        } catch (NumberFormatException ignored) {
+        } catch (ParseException | NumberFormatException ignored) {
             return null;
         }
     }

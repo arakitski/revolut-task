@@ -35,7 +35,9 @@ public class RestApiController {
     }
 
     public void start() {
-        port(portProvider.get());
+        Integer port = portProvider.get();
+        logger.info("Staring application on port :: " + port);
+        port(port);
 
         before("/*", (req, res) -> logger.info("Request to : {}, type: {}", req.uri(), req.requestMethod()));
 

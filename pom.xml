@@ -145,6 +145,13 @@
                     </locations>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.arakitski.revolut.App</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
