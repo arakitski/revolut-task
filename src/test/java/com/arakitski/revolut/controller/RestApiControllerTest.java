@@ -1,8 +1,9 @@
 package com.arakitski.revolut.controller;
 
-import com.arakitski.revolut.model.Account;
+import com.arakitski.revolut.exception.NotEnoughMoneyException;
 import com.arakitski.revolut.service.AccountService;
 import com.arakitski.revolut.service.MoneyTransferService;
+import com.arakitski.revolut.tables.pojos.Account;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.util.Providers;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -17,6 +18,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -50,8 +52,7 @@ public class RestApiControllerTest {
 
     @Before
     public void setUp() {
-        accountService = mock(AccountService.class);
-        moneyTransferService = mock(MoneyTransferService.class);
+        Mockito.reset(accountService, moneyTransferService);
         httpclient = HttpClients.createDefault();
         accountUriBuilder = new URIBuilder()
                 .setScheme("http")
@@ -66,7 +67,7 @@ public class RestApiControllerTest {
 
     @Test
     public void testGetAll() throws IOException, URISyntaxException {
-        ImmutableList<Account> expectedList = ImmutableList.of(new Account(1, BigDecimal.ZERO), new Account(2, BigDecimal.ONE));
+        ImmutableList<Account> expectedList = ImmutableList.of(new Account(1L, BigDecimal.ZERO), new Account(2L, BigDecimal.ONE));
         when(accountService.getAll()).thenReturn(expectedList);
 
         CloseableHttpResponse response = httpclient.execute(new HttpGet(accountUriBuilder.build()));
@@ -77,8 +78,8 @@ public class RestApiControllerTest {
 
     @Test
     public void testGetAccountById() throws IOException, URISyntaxException {
-        Account expectedAccount = new Account(1, BigDecimal.ZERO);
-        int accountId = 100500;
+        Account expectedAccount = new Account(1L, BigDecimal.ZERO);
+        long accountId = 100500;
         when(accountService.getById(accountId)).thenReturn(expectedAccount);
 
         CloseableHttpResponse response = httpclient.execute(
@@ -91,19 +92,17 @@ public class RestApiControllerTest {
     @Test
     public void testCreateAccount() throws IOException, URISyntaxException {
         int amount = 555;
-        Account expectedAccount = new Account(1, BigDecimal.valueOf(amount));
-        when(accountService.create(BigDecimal.valueOf(amount))).thenReturn(expectedAccount);
 
         CloseableHttpResponse response = httpclient.execute(
                 new HttpPost(accountUriBuilder.setParameter("balance", String.valueOf(amount)).build()));
 
+        verify(accountService).create(BigDecimal.valueOf(amount));
         assertEquals(response.getStatusLine().getStatusCode(), 201);
-        assertEquals(EntityUtils.toString(response.getEntity(), "UTF-8"), expectedAccount.toString());
     }
 
     @Test
     public void testDeleteAccount() throws URISyntaxException, IOException {
-        int accountId = 101;
+        long accountId = 101;
 
         CloseableHttpResponse response = httpclient.execute(
                 new HttpDelete(accountUriBuilder.setPath("accounts/" + accountId).build()));
@@ -128,5 +127,25 @@ public class RestApiControllerTest {
 
         verify(moneyTransferService).transfer(fromId, toId, BigDecimal.valueOf(amount));
         assertEquals(response.getStatusLine().getStatusCode(), 204);
+    }
+
+    @Test
+    public void testIllegalExceptionHandler() throws URISyntaxException, IOException {
+        when(accountService.getAll()).thenThrow(new IllegalArgumentException("testMessage"));
+
+        CloseableHttpResponse response = httpclient.execute(new HttpGet(accountUriBuilder.build()));
+
+        assertEquals(response.getStatusLine().getStatusCode(), 400);
+        assertEquals(EntityUtils.toString(response.getEntity(), "UTF-8"), "testMessage");
+    }
+
+    @Test
+    public void testNotEnoughMoneyException() throws URISyntaxException, IOException {
+        when(accountService.getAll()).thenThrow(new NotEnoughMoneyException("testMessage2"));
+
+        CloseableHttpResponse response = httpclient.execute(new HttpGet(accountUriBuilder.build()));
+
+        assertEquals(response.getStatusLine().getStatusCode(), 400);
+        assertEquals(EntityUtils.toString(response.getEntity(), "UTF-8"), "testMessage2");
     }
 }

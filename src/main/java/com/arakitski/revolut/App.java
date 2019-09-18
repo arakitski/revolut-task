@@ -20,10 +20,12 @@ public class App {
             .build());
     private static final CommandLineParser COMMAND_LINE_PARSER = new DefaultParser();
 
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) throws Exception {
+        // configure guice
+        Injector injector = Guice.createInjector(new AppModule(getApplicationPort(args)));
         // configure logger
         BasicConfigurator.configure();
-        Injector injector = Guice.createInjector(new AppModule(getApplicationPort(args)));
+        //start rest api
         injector.getBinding(RestApiController.class).getProvider().get().start();
     }
 

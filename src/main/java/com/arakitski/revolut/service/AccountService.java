@@ -1,15 +1,15 @@
 package com.arakitski.revolut.service;
 
-import com.arakitski.revolut.model.Account;
+import com.arakitski.revolut.tables.pojos.Account;
 import com.google.common.collect.ImmutableList;
 
 import java.math.BigDecimal;
 
 public interface AccountService {
     ImmutableList<Account> getAll();
-    Account getById(long id);
+    Account getById(Long id);
     /**Create new account with balance */
-    Account create(BigDecimal balance);
+    void create(BigDecimal balance);
     /** Remove account by id*/
-    void delete(long id);
+    void delete(Long id);
 }

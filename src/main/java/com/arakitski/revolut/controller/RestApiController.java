@@ -1,6 +1,7 @@
 package com.arakitski.revolut.controller;
 
 import com.arakitski.revolut.annotation.ApplicationPort;
+import com.arakitski.revolut.exception.NotEnoughMoneyException;
 import com.arakitski.revolut.service.AccountService;
 import com.arakitski.revolut.service.MoneyTransferService;
 import com.google.inject.Provider;
@@ -45,20 +46,21 @@ public class RestApiController {
             });
             post("", (request, response) -> {
                 BigDecimal balance = new BigDecimal(request.queryParams("balance"));
+                accountService.create(balance);
                 response.status(201);
                 logger.info("create account with balance: {}", balance);
-                return accountService.create(balance);
+                return "OK";
             });
             get("/:id", (request, response) -> {
-                long id = Long.parseLong(request.params("id"));
+                Long id = Long.parseLong(request.params("id"));
                 logger.info("get account by id {}", id);
                 return accountService.getById(id);
             });
             delete("/:id", (request, response) -> {
-                response.status(204);
-                long id = Long.parseLong(request.params("id"));
+                Long id = Long.parseLong(request.params("id"));
                 logger.info("get account by id {}", id);
                 accountService.delete(id);
+                response.status(204);
                 return "OK";
             });
         });
@@ -72,6 +74,15 @@ public class RestApiController {
             response.status(204);
             return "OK";
         }));
+
+        exception(NotEnoughMoneyException.class, (exception, request, response) -> {
+            response.status(400);
+            response.body(exception.getMessage());
+        });
+        exception(IllegalArgumentException.class, (exception, request, response) -> {
+            response.status(400);
+            response.body(exception.getMessage());
+        });
 
     }
 }
